@@ -6,19 +6,22 @@ html { scroll-behavior: smooth; }
 body { margin: 0; min-height: 100vh; background: #f7f4ea; font-family: Arial, Helvetica, sans-serif; }
 a { text-decoration: none; }
 
-/* Mr. Eggz navigation follows the physical orientation of the screen. */
-.mr-nav-portrait-trigger, .mr-nav-portrait { display: none; }
+/* Navigation follows the physical orientation of the screen. */
+.mr-nav-portrait, .mr-nav-landscape { display: none; }
 @media (orientation: landscape) {
   .mr-nav-landscape { display: block; }
-  .mr-nav-portrait-trigger, .mr-nav-portrait { display: none !important; }
+  .mr-nav-portrait { display: none !important; }
 }
 @media (orientation: portrait) {
   .mr-nav-landscape { display: none !important; }
-  .mr-nav-portrait-trigger { display: block; }
+  .mr-nav-portrait { display: flex; }
+  .mr-portrait-page { padding-left: 76px; }
 }
-@media (orientation: portrait) and (min-width: 700px) {
-  .mr-nav-portrait-trigger { right: 24px; top: 20px; }
+@media (orientation: portrait) and (max-width: 430px) {
+  .mr-portrait-page { padding-left: 70px; }
+  .mr-nav-portrait { width: 70px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
