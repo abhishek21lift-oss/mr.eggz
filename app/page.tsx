@@ -17,50 +17,81 @@ const productTags: Record<string, string> = {
   "6": "Mini Pack",
 };
 
-export default function Home() {
-  return <main className="min-h-screen overflow-hidden bg-[#f7f4ea] text-[#171713]">
-    <ResponsiveNav />
-
-    <section id="top" className="relative bg-[#171713] text-[#f7f4ea]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_45%,rgba(217,182,93,.16),transparent_35%)]" />
-      <div className="relative mx-auto grid min-h-[720px] max-w-7xl gap-6 px-5 pb-12 pt-24 md:grid-cols-[.9fr_1.1fr] md:items-center md:px-10 md:pb-16 md:pt-28">
-        <div className="relative z-10">
-          <div className="mb-7 inline-flex rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[.22em] text-[#e7d38e]">Farm fresh · Kanpur</div>
-          <h1 className="max-w-3xl text-6xl font-black leading-[.86] tracking-[-.075em] sm:text-7xl md:text-8xl">Healthy Eggs.<br /><span className="text-[#d9b65d]">Honest Eggs.</span></h1>
-          <p className="mt-8 max-w-xl text-base leading-7 text-white/60 sm:text-lg">MR.EGGZ is a trusted premium egg brand built around clean, hygienic and farm-fresh eggs for athletes, families and health-conscious everyday customers.</p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <a href="#shop" className="rounded-full bg-[#d9b65d] px-6 py-4 font-black text-[#171713]">Order now →</a>
-            <a href="#contact" className="rounded-full border border-white/15 px-6 py-4 font-bold text-white">Contact us</a>
+function PackVisual({ quantity, index }: { quantity: number; index: number }) {
+  const eggs = Array.from({ length: quantity === 30 ? 10 : quantity === 10 ? 6 : 4 });
+  return (
+    <div className={`relative flex aspect-[1.08] items-center justify-center overflow-hidden rounded-[1.6rem] ${index === 1 ? "bg-[#e8efd9]" : "bg-[#f3ead4]"}`}>
+      <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/70 blur-3xl" />
+      <div className="absolute bottom-3 left-1/2 h-8 w-48 -translate-x-1/2 rounded-full bg-black/10 blur-xl" />
+      <div className="relative w-[72%] max-w-[270px] -rotate-2 rounded-[1.15rem] border border-black/10 bg-[#c99738] p-3 shadow-[0_20px_35px_rgba(53,38,13,.22)] transition duration-500 group-hover:-translate-y-2 group-hover:rotate-0">
+        <div className="rounded-[.8rem] border border-white/25 bg-gradient-to-br from-[#e2b75b] via-[#c78e2b] to-[#9b6818] p-3 text-[#fffaf0]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[9px] font-black uppercase tracking-[.22em]">MR.EGGZ</span>
+            <span className="rounded-full bg-white/20 px-2 py-1 text-[7px] font-black uppercase tracking-[.15em]">Premium</span>
+          </div>
+          <div className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-[#fff8e8]/90 px-2 py-3 shadow-inner">
+            {eggs.map((_, i) => <span key={i} className="h-6 w-5 rounded-[55%_45%_48%_52%/58%_58%_42%_42%] border border-black/10 bg-[radial-gradient(circle_at_35%_25%,#fff,#f0e6cd_70%,#c9b88e)] shadow-sm" />)}
+          </div>
+          <div className="mt-3 flex items-end justify-between">
+            <div><div className="text-2xl font-black leading-none">{quantity}</div><div className="mt-1 text-[7px] font-bold uppercase tracking-[.2em] text-white/75">WHITE EGGS</div></div>
+            <div className="text-right text-[7px] font-bold uppercase tracking-[.14em] text-white/70">Farm Fresh<br />Daily</div>
           </div>
         </div>
-        <EggHero />
       </div>
-      <div className="relative border-t border-white/10"><div className="mx-auto flex max-w-7xl flex-wrap gap-3 px-5 py-5 md:gap-10 md:px-10">
-        {["Farm Fresh Daily", "Premium Eggs", "For Fitness", "For Families"].map((item, i) => <span key={item} className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[.16em] text-white/55"><span className={`h-2 w-2 rounded-full ${i === 0 ? "bg-[#4e8b42]" : i === 1 ? "bg-[#171713] ring-1 ring-white/30" : "bg-[#d9b65d]"}`} />{item}</span>)}
-      </div></div>
-    </section>
+      <div className="absolute bottom-4 right-4 rounded-full border border-black/10 bg-white/80 px-3 py-1.5 text-[9px] font-black uppercase tracking-[.14em] text-[#8c6d21] shadow-sm">{productTags[String(quantity)]}</div>
+    </div>
+  );
+}
 
-    <section className="border-b border-black/5 bg-white px-5 py-16 md:px-10 md:py-24">
-      <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1fr_1.4fr] md:items-end">
-        <div><p className="text-xs font-black uppercase tracking-[.28em] text-[#8c6d21]">The MR.EGGZ promise</p><h2 className="mt-4 max-w-xl text-4xl font-black leading-[.95] tracking-[-.05em] sm:text-5xl md:text-6xl">Real strength starts with a source you can trust.</h2></div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[["01", "Farm Fresh Daily", "Freshness-led sourcing and a simple farm-to-table story."], ["02", "Quality Focused", "Premium presentation without unnecessary claims."], ["03", "Made for Everyday", "Packs designed around home, fitness and regular buyers."]].map(([n, title, copy]) => <article key={n} className="rounded-[1.75rem] border border-black/10 bg-[#f7f4ea] p-6"><span className="text-xs font-black text-[#8c6d21]">{n}</span><h3 className="mt-8 text-xl font-black">{title}</h3><p className="mt-2 text-sm leading-6 text-black/50">{copy}</p></article>)}
+export default function Home() {
+  return (
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f4ea] text-[#171713]">
+      <ResponsiveNav />
+
+      <section id="top" className="relative overflow-hidden border-b border-black/5 bg-[#fffdf8]">
+        <div className="absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#d9b65d]/10 blur-3xl" />
+        <div className="absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-[#dfe8cf]/55 blur-3xl" />
+        <div className="relative mx-auto grid min-h-[680px] max-w-7xl gap-4 px-5 pb-10 pt-24 sm:pt-28 md:grid-cols-[.9fr_1.1fr] md:items-center md:px-10 md:pb-16 md:pt-28 lg:min-h-[760px]">
+          <div className="relative z-10 max-w-2xl">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#8c6d21]/20 bg-white/75 px-4 py-2 text-[10px] font-black uppercase tracking-[.22em] text-[#8c6d21] shadow-sm backdrop-blur">● Farm fresh · Kanpur</div>
+            <h1 className="max-w-3xl text-[3.7rem] font-black leading-[.88] tracking-[-.075em] sm:text-7xl md:text-8xl lg:text-[6.5rem]">Healthy Eggs.<br /><span className="text-[#b47d1e]">Honest Eggs.</span></h1>
+            <p className="mt-7 max-w-xl text-base leading-7 text-black/55 sm:text-lg">MR.EGGZ is a premium egg brand focused on clean, hygienic and farm-fresh eggs for athletes, families and health-conscious everyday customers.</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a href="#shop" className="rounded-full bg-[#c58d25] px-6 py-3.5 font-black text-white shadow-[0_12px_25px_rgba(139,97,22,.22)] transition hover:-translate-y-0.5 hover:bg-[#a97517]">Order now →</a>
+              <a href="#contact" className="rounded-full border border-black/10 bg-white/70 px-6 py-3.5 font-black text-[#171713] shadow-sm transition hover:-translate-y-0.5">Contact us</a>
+            </div>
+            <div className="mt-9 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-4">
+              {["Farm Fresh", "Premium", "Fitness", "Families"].map((item, i) => <div key={item} className="rounded-2xl border border-black/7 bg-white/70 px-3 py-3 shadow-sm backdrop-blur"><div className={`mb-2 h-2 w-2 rounded-full ${i === 0 ? "bg-[#4e8b42]" : i === 1 ? "bg-[#c58d25]" : "bg-[#171713]"}`} /><div className="text-[9px] font-black uppercase tracking-[.12em] text-black/55">{item}</div></div>)}
+            </div>
+          </div>
+          <div className="order-first md:order-last"><EggHero /></div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section id="shop" className="mx-auto max-w-7xl px-5 py-20 md:px-10 md:py-28">
-      <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-xs font-black uppercase tracking-[.28em] text-[#8c6d21]">MR.EGGZ Quality Products</p><h2 className="mt-3 max-w-3xl text-4xl font-black leading-none tracking-[-.05em] sm:text-5xl md:text-7xl">Pick the pack that fits your day.</h2></div><p className="max-w-sm text-sm leading-6 text-black/50 md:text-right">6, 10 and 30 egg packs for everyday orders, families, fitness-focused buyers and regular stock-ups.</p></div>
-      <div className="mt-12 grid gap-5 md:grid-cols-3">{products.map((product, index) => <article key={product.id} className="group overflow-hidden rounded-[2rem] border border-black/10 bg-white p-4 transition duration-300 hover:-translate-y-2 hover:shadow-xl">
-        <div className={`relative flex aspect-[1.05] items-center justify-center overflow-hidden rounded-[1.5rem] ${index === 1 ? "bg-[#dfe8cf]" : "bg-[#efe8d2]"}`}><div className="absolute inset-5 rounded-[1.25rem] border border-black/5" /><div className="relative z-10 text-center"><div className="text-8xl font-black leading-none tracking-[-.08em]">{String(product.quantity).padStart(2, "0")}</div><div className="mt-2 text-xs font-black uppercase tracking-[.3em] text-[#8c6d21]">EGGS</div></div><span className="absolute right-4 top-4 rounded-full bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-[.16em] text-[#8c6d21]">{productTags[product.id]}</span></div>
-        <div className="p-2 pt-5"><h3 className="text-2xl font-black">{productNames[product.id] ?? product.name}</h3><p className="mt-2 text-sm text-black/45">{product.description}</p><div className="mt-6 grid grid-cols-2 gap-3"><button onClick={() => { addToCart({ id: product.id, name: product.name, quantity: 1 }); window.location.href = "/cart"; }} className="rounded-full bg-[#171713] px-5 py-3.5 text-sm font-black text-white group-hover:bg-[#8c6d21]">Add to cart</button><a href={`/products/${product.id}`} className="rounded-full border border-black/10 px-5 py-3.5 text-center text-sm font-black">View pack</a></div></div>
-      </article>)}</div>
-    </section>
+      <section className="border-b border-black/5 bg-white px-5 py-16 md:px-10 md:py-24">
+        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[.85fr_1.5fr] md:items-end">
+          <div><p className="text-[10px] font-black uppercase tracking-[.28em] text-[#8c6d21]">The MR.EGGZ promise</p><h2 className="mt-4 max-w-xl text-4xl font-black leading-[.95] tracking-[-.05em] sm:text-5xl md:text-6xl">Real strength starts with a source you can trust.</h2></div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[["01", "Farm Fresh Daily", "Freshness-led sourcing and a simple farm-to-table story."], ["02", "Quality Focused", "Premium presentation without unnecessary claims."], ["03", "Made for Everyday", "Packs designed around home, fitness and regular buyers."]].map(([n, title, copy]) => <article key={n} className="group rounded-[1.75rem] border border-black/8 bg-[#f7f4ea] p-6 transition hover:-translate-y-1 hover:shadow-lg"><span className="text-xs font-black text-[#8c6d21]">{n}</span><h3 className="mt-8 text-xl font-black">{title}</h3><p className="mt-2 text-sm leading-6 text-black/50">{copy}</p></article>)}
+          </div>
+        </div>
+      </section>
 
-    <section id="story" className="bg-[#dfe8cf] px-5 py-20 md:px-10 md:py-28"><div className="mx-auto max-w-7xl"><p className="text-xs font-black uppercase tracking-[.28em] text-[#456032]">Why choose MR.EGGZ</p><h2 className="mt-4 max-w-5xl text-4xl font-black leading-[.95] tracking-[-.05em] sm:text-5xl md:text-7xl">From a village farm to everyday tables.</h2><p className="mt-6 max-w-2xl text-base leading-7 text-black/60 sm:text-lg">Mr. Eggz is rooted in Uttari Village, Kanpur. The brand is being built around a clear idea: make the journey from farm to customer easier to understand and easier to trust.</p></div></section>
+      <section id="shop" className="mx-auto max-w-7xl px-5 py-20 md:px-10 md:py-28">
+        <div className="grid gap-7 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-[10px] font-black uppercase tracking-[.28em] text-[#8c6d21]">MR.EGGZ Quality Products</p><h2 className="mt-3 max-w-3xl text-4xl font-black leading-none tracking-[-.05em] sm:text-5xl md:text-7xl">Pick the pack that fits your day.</h2></div><p className="max-w-sm text-sm leading-6 text-black/50 md:text-right">Six, ten and thirty white-egg packs for everyday orders, families, fitness-focused buyers and regular stock-ups.</p></div>
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {products.map((product, index) => <article key={product.id} className="group overflow-hidden rounded-[2rem] border border-black/8 bg-white p-3 shadow-[0_10px_35px_rgba(35,28,14,.05)] transition duration-500 hover:-translate-y-2 hover:shadow-[0_24px_55px_rgba(35,28,14,.12)]">
+            <PackVisual quantity={product.quantity} index={index} />
+            <div className="p-3 pt-5"><p className="text-[9px] font-black uppercase tracking-[.18em] text-[#8c6d21]">{productTags[product.id]}</p><h3 className="mt-2 text-xl font-black leading-tight">{productNames[product.id] ?? product.name}</h3><p className="mt-2 text-sm leading-6 text-black/45">{product.description}</p><div className="mt-6 grid grid-cols-2 gap-3"><button onClick={() => { addToCart({ id: product.id, name: product.name, quantity: 1 }); window.location.href = "/cart"; }} className="rounded-full bg-[#171713] px-4 py-3 text-sm font-black text-white transition hover:bg-[#8c6d21]">Add to cart</button><a href={`/products/${product.id}`} className="rounded-full border border-black/10 px-4 py-3 text-center text-sm font-black transition hover:border-[#8c6d21]">View pack</a></div></div>
+          </article>)}
+        </div>
+      </section>
 
-    <section id="business" className="bg-[#171713] px-5 py-20 text-white md:px-10 md:py-28"><div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-xs font-black uppercase tracking-[.28em] text-[#d9b65d]">For business</p><h2 className="mt-4 max-w-4xl text-4xl font-black leading-[.95] tracking-[-.05em] sm:text-5xl md:text-7xl">Your gym. Your restaurant. Your supply.</h2><p className="mt-7 max-w-2xl text-base leading-7 text-white/55 sm:text-lg">Need eggs in bulk? Start a supply conversation for gyms, restaurants, retailers and other bulk buyers.</p></div><a href="/business" className="inline-flex w-fit rounded-full bg-[#d9b65d] px-7 py-4 font-black text-[#171713]">Bulk enquiry →</a></div></section>
+      <section id="story" className="relative overflow-hidden bg-[#dfe8cf] px-5 py-20 md:px-10 md:py-28"><div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/35 blur-3xl" /><div className="relative mx-auto max-w-7xl"><p className="text-[10px] font-black uppercase tracking-[.28em] text-[#456032]">Why choose MR.EGGZ</p><h2 className="mt-4 max-w-5xl text-4xl font-black leading-[.95] tracking-[-.05em] sm:text-5xl md:text-7xl">From a village farm to everyday tables.</h2><p className="mt-6 max-w-2xl text-base leading-7 text-black/60 sm:text-lg">Mr. Eggz is rooted in Uttari Village, Kanpur. The brand is being built around a clear idea: make the journey from farm to customer easier to understand and easier to trust.</p></div></section>
 
-    <footer id="contact" className="bg-[#171713] px-5 pb-10 text-white/35 md:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-6 border-t border-white/10 pt-8 text-sm md:flex-row md:items-center md:justify-between"><div className="font-black text-white/70">MR. EGGZ</div><div>Farm fresh · Kanpur</div><div>Built for home, fitness & business</div></div></footer>
-  </main>;
+      <section id="business" className="bg-[#171713] px-5 py-20 text-white md:px-10 md:py-28"><div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1fr_auto] md:items-end"><div><p className="text-[10px] font-black uppercase tracking-[.28em] text-[#d9b65d]">For business</p><h2 className="mt-4 max-w-4xl text-4xl font-black leading-[.95] tracking-[-.05em] sm:text-5xl md:text-7xl">Your gym. Your restaurant. Your supply.</h2><p className="mt-7 max-w-2xl text-base leading-7 text-white/55 sm:text-lg">Need eggs in bulk? Start a supply conversation for gyms, restaurants, retailers and other bulk buyers.</p></div><a href="/business" className="inline-flex w-fit rounded-full bg-[#d9b65d] px-7 py-4 font-black text-[#171713]">Bulk enquiry →</a></div></section>
+
+      <footer id="contact" className="bg-[#171713] px-5 pb-10 text-white/35 md:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-6 border-t border-white/10 pt-8 text-sm md:flex-row md:items-center md:justify-between"><div className="font-black text-white/70">MR. EGGZ</div><div>Farm fresh · Kanpur</div><div>Built for home, fitness & business</div></div></footer>
+    </main>
+  );
 }
