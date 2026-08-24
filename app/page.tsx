@@ -21,9 +21,7 @@ export default function Home() {
         <div className="grid gap-6 md:grid-cols-3">
           {[['06','6 Eggs','Quick & easy'],['10','10 Eggs','Everyday pack'],['30','30 Eggs','Stock-up pack']].map(([count,title,desc]) => (
             <article key={count} className="group rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm transition hover:-translate-y-2 hover:shadow-xl">
-              <div className="flex aspect-square items-center justify-center rounded-[1.5rem] bg-[#efe8d2]">
-                <div className="text-center"><div className="text-8xl font-black tracking-tighter text-[#171713]">{count}</div><div className="mt-2 text-sm font-bold uppercase tracking-[0.25em] text-[#8c6d21]">EGGS</div></div>
-              </div>
+              <div className="flex aspect-square items-center justify-center rounded-[1.5rem] bg-[#efe8d2]"><div className="text-center"><div className="text-8xl font-black tracking-tighter">{count}</div><div className="mt-2 text-sm font-bold uppercase tracking-[0.25em] text-[#8c6d21]">EGGS</div></div></div>
               <h3 className="mt-6 text-2xl font-black">{title}</h3><p className="mt-2 text-black/55">{desc}</p>
               <button className="mt-6 w-full rounded-full bg-[#171713] px-5 py-3 font-bold text-white transition group-hover:bg-[#8c6d21]">View Pack</button>
             </article>
@@ -43,11 +41,11 @@ export default function Home() {
           <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#d9b65d]">For businesses</p>
           <h2 className="mt-4 max-w-4xl text-4xl font-black md:text-6xl">Need eggs for your gym, restaurant or store?</h2>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-white/60">Talk to Mr. Eggz about bulk requirements and reliable supply.</p>
-          <a href="https://wa.me/919999999999" className="mt-8 inline-flex rounded-full bg-[#d9b65d] px-7 py-4 font-bold text-[#171713]">Talk on WhatsApp</a>
+          <a href="#contact" className="mt-8 inline-flex rounded-full bg-[#d9b65d] px-7 py-4 font-bold text-[#171713]">Start a bulk enquiry</a>
         </div>
       </section>
 
-      <footer className="bg-[#171713] px-6 pb-10 text-center text-sm text-white/40">MR. EGGZ — Farm fresh, made simple.</footer>
+      <footer id="contact" className="bg-[#171713] px-6 pb-10 text-center text-sm text-white/40">MR. EGGZ — Farm fresh, made simple.</footer>
     </main>
   );
 }
