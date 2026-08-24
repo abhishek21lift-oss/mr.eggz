@@ -1,14 +1,33 @@
 "use client";
 
-import { useState } from "react";
-
-const links = [["Home", "#top"], ["Shop", "#shop"], ["Why choose MR.EGGZ", "#story"], ["About Us", "#story"], ["Contact Us", "#contact"]] as const;
+const links = [
+  ["Home", "#top", "⌂"],
+  ["Shop", "#shop", "◉"],
+  ["Why", "#story", "✦"],
+  ["About", "#story", "◎"],
+  ["Contact", "#contact", "↗"],
+] as const;
 
 export function ResponsiveNav() {
-  const [open, setOpen] = useState(false);
   return <>
-    <header className="mr-nav-landscape fixed inset-x-0 top-0 z-[60] border-b border-white/10 bg-[#171713]/75 px-6 py-3 text-white shadow-lg backdrop-blur-2xl md:px-10"><nav className="mx-auto flex max-w-7xl items-center justify-between gap-8"><a href="#top" className="shrink-0 text-xl font-black tracking-[-.06em]">MR. <span className="text-[#d9b65d]">EGGZ</span></a><div className="flex flex-1 items-center justify-center gap-2">{links.map(([label, href], i) => <a key={`${label}-${href}`} href={href} className={`rounded-full px-4 py-2 text-sm font-bold transition hover:bg-white/10 hover:text-[#d9b65d] ${i === 0 ? "bg-white/10 text-[#d9b65d]" : "text-white/75"}`}>{label}</a>)}</div><a href="#shop" className="shrink-0 rounded-full bg-[#d9b65d] px-5 py-2.5 text-sm font-black text-[#171713]">Shop eggs</a></nav></header>
-    <button aria-label="Open navigation" onClick={() => setOpen(true)} className="mr-nav-portrait-trigger fixed right-4 top-4 z-[60] rounded-2xl border border-black/10 bg-[#f7f4ea]/90 px-4 py-3 shadow-xl backdrop-blur-xl"><span className="block h-0.5 w-6 bg-[#171713]"/><span className="mt-1.5 block h-0.5 w-4 bg-[#171713]"/></button>
-    {open && <div className="mr-nav-portrait fixed inset-0 z-[70] bg-black/25 backdrop-blur-[2px]" onClick={() => setOpen(false)}><aside className="ml-auto flex h-full w-[min(86vw,360px)] flex-col bg-[#f7f4ea] px-7 py-8 shadow-2xl" onClick={(e) => e.stopPropagation()}><div className="flex items-center justify-between border-b border-black/10 pb-7"><a href="#top" onClick={() => setOpen(false)} className="text-xl font-black tracking-[-.06em]">MR. <span className="text-[#8c6d21]">EGGZ</span></a><button aria-label="Close navigation" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-black/10 text-2xl leading-none">×</button></div><nav className="flex flex-col pt-5">{links.map(([label, href], i) => <a key={`${label}-${href}`} href={href} onClick={() => setOpen(false)} className={`border-b border-black/[.06] py-6 text-lg font-bold transition ${i === 0 ? "text-[#8c6d21]" : "text-[#171713]"}`}>{label}</a>)}</nav><a href="#shop" onClick={() => setOpen(false)} className="mt-auto rounded-full bg-[#171713] px-6 py-4 text-center font-black text-white">Shop eggs →</a></aside></div>}
+    <header className="mr-nav-landscape fixed inset-x-0 top-0 z-[60] border-b border-black/8 bg-white/80 px-5 py-3 text-[#171713] shadow-[0_8px_30px_rgba(20,18,10,.06)] backdrop-blur-2xl md:px-10">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-6">
+        <a href="#top" className="shrink-0 text-xl font-black tracking-[-.06em]">MR. <span className="text-[#b47d1e]">EGGZ</span></a>
+        <div className="flex flex-1 items-center justify-center gap-1.5">
+          {links.map(([label, href], i) => <a key={`${label}-${href}`} href={href} className={`rounded-full px-4 py-2 text-sm font-bold transition hover:bg-[#f3ead4] hover:text-[#8c6d21] ${i === 0 ? "bg-[#f3ead4] text-[#8c6d21]" : "text-black/60"}`}>{label}</a>)}
+        </div>
+        <a href="#shop" className="shrink-0 rounded-full bg-[#c58d25] px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-[#a97517]">Shop eggs</a>
+      </nav>
+    </header>
+
+    <aside className="mr-nav-portrait fixed inset-y-0 left-0 z-[60] flex w-[76px] flex-col items-center border-r border-black/8 bg-white/82 py-5 shadow-[8px_0_30px_rgba(20,18,10,.06)] backdrop-blur-2xl">
+      <a href="#top" className="mb-7 text-center text-[11px] font-black leading-none tracking-[-.06em] text-[#171713]">MR.<br /><span className="text-[#b47d1e]">EGGZ</span></a>
+      <nav className="flex w-full flex-1 flex-col items-center gap-2">
+        {links.map(([label, href, icon], i) => <a key={`${label}-${href}`} href={href} className={`flex w-[60px] flex-col items-center gap-1 rounded-2xl px-1 py-3 text-center transition ${i === 0 ? "bg-[#f3ead4] text-[#8c6d21]" : "text-black/45 hover:bg-[#f7f4ea] hover:text-[#8c6d21]"}`}>
+          <span className="text-lg font-black leading-none">{icon}</span><span className="text-[8px] font-black uppercase tracking-[.08em]">{label}</span>
+        </a>)}
+      </nav>
+      <a href="#shop" className="mt-3 grid h-12 w-12 place-items-center rounded-2xl bg-[#c58d25] text-[9px] font-black uppercase tracking-[.08em] text-white shadow-md">Shop</a>
+    </aside>
   </>;
 }
