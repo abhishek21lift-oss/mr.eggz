@@ -2,13 +2,14 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { products } from "../../lib/catalogue";
-import { readCart, type CartItem } from "../../lib/cart";
+import { readCart, writeCart, type CartItem } from "../../lib/cart";
+import { createOrderDraft, saveOrder, type DeliveryLocation } from "../../lib/order";
 
-type DeliveryLocation = { latitude: number; longitude: number; source: "GPS" | "MANUAL" };
 type DeliveryCheck = { available: boolean; distanceKm?: number; radiusKm?: number; deliveryFee?: number | null; freeAbove?: number; eta?: string | null; error?: string };
 
 export default function CheckoutPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [orderId, setOrderId] = useState("");
   const [location, setLocation] = useState<DeliveryLocation | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationMessage, setLocationMessage] = useState("");
@@ -54,7 +55,7 @@ export default function CheckoutPage() {
     setLocationMessage("");
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        const next = { latitude: coords.latitude, longitude: coords.longitude, source: "GPS" as const };
+        const next: DeliveryLocation = { latitude: coords.latitude, longitude: coords.longitude, source: "GPS" };
         setLocation(next);
         localStorage.setItem("mrEggzDeliveryLocation", JSON.stringify(next));
         setLocationMessage("Delivery location detected. Checking availability…");
@@ -70,7 +71,50 @@ export default function CheckoutPage() {
     event.preventDefault();
     if (!location) { setLocationMessage("Please detect your delivery location before continuing."); return; }
     if (!delivery?.available) { setLocationMessage("Delivery is not available at this location yet."); return; }
+    if (!cart.length) { setLocationMessage("Your cart is empty."); return; }
+
+    const data = new FormData(event.currentTarget);
+    const order = createOrderDraft(
+      cart,
+      {
+        name: String(data.get("name") ?? ""),
+        phone: String(data.get("phone") ?? ""),
+        address: String(data.get("address") ?? ""),
+        city: String(data.get("city") ?? ""),
+        pin: String(data.get("pin") ?? ""),
+      },
+      location,
+      delivery.deliveryFee ?? 0,
+    );
+
+    saveOrder(order);
+    writeCart([]);
+    setOrderId(order.id);
     setSubmitted(true);
+  }
+
+  if (submitted) {
+    return (
+      <main className="min-h-screen bg-[#f7f4ea] text-[#171713]">
+        <section className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
+          <div className="w-full rounded-[2.5rem] bg-white p-8 text-center shadow-xl md:p-12">
+            <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#dfe8cf] text-3xl">✓</div>
+            <p className="mt-7 text-sm font-black uppercase tracking-[.25em] text-[#8c6d21]">Order placed</p>
+            <h1 className="mt-3 text-5xl font-black">Thank you.</h1>
+            <p className="mx-auto mt-4 max-w-md text-black/55">Your order has been recorded and is ready for the operations team.</p>
+            <div className="mx-auto mt-7 max-w-sm rounded-2xl bg-[#f7f4ea] p-5 text-left">
+              <div className="flex justify-between"><span className="text-black/50">Order ID</span><strong>{orderId}</strong></div>
+              <div className="mt-3 flex justify-between"><span className="text-black/50">Total</span><strong>₹{total.toFixed(2)}</strong></div>
+              <div className="mt-3 flex justify-between"><span className="text-black/50">Status</span><strong>PLACED</strong></div>
+            </div>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <a href="/" className="rounded-full bg-[#171713] px-7 py-3 font-bold text-white">Back home</a>
+              <a href="/admin/orders" className="rounded-full border border-black/10 px-7 py-3 font-bold">Open operations</a>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -90,10 +134,9 @@ export default function CheckoutPage() {
               <label className="text-sm font-bold">City<input required name="city" className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f7f4ea] px-4 py-3 outline-none focus:border-[#8c6d21]" /></label>
               <label className="text-sm font-bold">PIN code<input required name="pin" inputMode="numeric" className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f7f4ea] px-4 py-3 outline-none focus:border-[#8c6d21]" /></label>
             </div>
-            {submitted && <div className="mt-6 rounded-2xl bg-[#dfe8cf] p-4 text-sm font-bold text-[#456032]">Delivery confirmed for this location. Payment integration is the next step.</div>}
-            <button type="submit" disabled={!delivery?.available || checkingDelivery} className="mt-7 w-full rounded-full bg-[#171713] px-6 py-4 font-black text-white transition hover:bg-[#8c6d21] disabled:cursor-not-allowed disabled:opacity-40">Continue to payment</button>
+            <button type="submit" disabled={!delivery?.available || checkingDelivery} className="mt-7 w-full rounded-full bg-[#171713] px-6 py-4 font-black text-white transition hover:bg-[#8c6d21] disabled:cursor-not-allowed disabled:opacity-40">Place order</button>
           </form>
-          <aside className="h-fit rounded-[2rem] bg-[#171713] p-7 text-white lg:sticky lg:top-8"><p className="text-sm font-black uppercase tracking-[.25em] text-[#d9b65d]">Order summary</p><div className="mt-7 flex justify-between border-b border-white/10 pb-5"><span className="text-white/60">Subtotal</span><span className="font-black">{subtotal ? `₹${subtotal.toFixed(2)}` : "Price pending"}</span></div><div className="mt-5 flex justify-between"><span className="text-white/60">Delivery</span><span className="font-black">{delivery?.available ? (delivery.deliveryFee ? `₹${delivery.deliveryFee.toFixed(2)}` : "FREE") : "—"}</span></div><div className="mt-5 flex justify-between text-lg"><span className="font-bold">Total</span><span className="font-black">{subtotal ? `₹${total.toFixed(2)}` : "Price pending"}</span></div>{delivery?.freeAbove ? <div className="mt-7 rounded-2xl bg-white/5 p-4 text-xs leading-5 text-white/45">Free delivery on orders above ₹{delivery.freeAbove}.</div> : null}</aside>
+          <aside className="h-fit rounded-[2rem] bg-[#171713] p-7 text-white lg:sticky lg:top-8"><p className="text-sm font-black uppercase tracking-[.25em] text-[#d9b65d]">Order summary</p><div className="mt-7 flex justify-between border-b border-white/10 pb-5"><span className="text-white/60">Subtotal</span><span className="font-black">₹{subtotal.toFixed(2)}</span></div><div className="mt-5 flex justify-between"><span className="text-white/60">Delivery</span><span className="font-black">{delivery?.available ? (delivery.deliveryFee ? `₹${delivery.deliveryFee.toFixed(2)}` : "FREE") : "—"}</span></div><div className="mt-5 flex justify-between text-lg"><span className="font-bold">Total</span><span className="font-black">₹{total.toFixed(2)}</span></div></aside>
         </div>
       </section>
     </main>
