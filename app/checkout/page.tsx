@@ -5,117 +5,21 @@ import { products } from "../../lib/catalogue";
 import { readCart, writeCart, type CartItem } from "../../lib/cart";
 import { createOrderDraft, saveOrder, type DeliveryLocation } from "../../lib/order";
 
-type DeliveryCheck = { available: boolean; distanceKm?: number; radiusKm?: number; deliveryFee?: number | null; freeAbove?: number; eta?: string | null; error?: string };
-
+type DeliveryCheck = { available: boolean; distanceKm?: number; radiusKm?: number; deliveryFee?: number | null; eta?: string | null; error?: string };
 type Customer = { name: string; phone: string; address: string; city: string; pin: string };
 
 export default function CheckoutPage() {
-  const [submitted, setSubmitted] = useState(false);
-  const [orderId, setOrderId] = useState("");
-  const [location, setLocation] = useState<DeliveryLocation | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [locationMessage, setLocationMessage] = useState("");
-  const [delivery, setDelivery] = useState<DeliveryCheck | null>(null);
-  const [checkingDelivery, setCheckingDelivery] = useState(false);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [customer, setCustomer] = useState<Customer>({ name: "", phone: "", address: "", city: "", pin: "" });
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    try {
-      const savedLocation = localStorage.getItem("mrEggzDeliveryLocation");
-      const savedCustomer = localStorage.getItem("mrEggzCustomerProfile");
-      if (savedLocation) setLocation(JSON.parse(savedLocation));
-      if (savedCustomer) setCustomer((current) => ({ ...current, ...JSON.parse(savedCustomer) }));
-      setCart(readCart());
-    } catch {}
-  }, []);
-
-  const subtotal = useMemo(() => cart.reduce((sum, item) => {
-    const product = products.find((p) => p.id === item.id);
-    return sum + (product?.price ?? 0) * item.quantity;
-  }, 0), [cart]);
-
+  const [submitted, setSubmitted] = useState(false), [orderId, setOrderId] = useState(""), [location, setLocation] = useState<DeliveryLocation | null>(null), [locating, setLocating] = useState(false), [locationMessage, setLocationMessage] = useState(""), [delivery, setDelivery] = useState<DeliveryCheck | null>(null), [checkingDelivery, setCheckingDelivery] = useState(false), [cart, setCart] = useState<CartItem[]>([]), [customer, setCustomer] = useState<Customer>({ name: "", phone: "", address: "", city: "", pin: "" }), [saved, setSaved] = useState(false);
+  useEffect(() => { try { const l = localStorage.getItem("mrEggzDeliveryLocation"), c = localStorage.getItem("mrEggzCustomerProfile"); if (l) setLocation(JSON.parse(l)); if (c) setCustomer((v) => ({ ...v, ...JSON.parse(c) })); setCart(readCart()); } catch {} }, []);
+  const subtotal = useMemo(() => cart.reduce((s, i) => { const p = products.find((x) => x.id === i.id); return s + (p?.price ?? 0) * i.quantity; }, 0), [cart]);
   const total = subtotal + (delivery?.deliveryFee ?? 0);
+  async function checkDelivery(next: DeliveryLocation) { setCheckingDelivery(true); setDelivery(null); try { const r = await fetch(`/api/delivery/check?lat=${next.latitude}&lng=${next.longitude}&subtotal=${subtotal}`); setDelivery(await r.json()); } catch { setDelivery({ available: false, error: "We could not verify delivery right now." }); } finally { setCheckingDelivery(false); } }
+  function detectLocation() { if (!navigator.geolocation) return setLocationMessage("Location detection is not supported on this device."); setLocating(true); setLocationMessage(""); navigator.geolocation.getCurrentPosition(({ coords }) => { const n: DeliveryLocation = { latitude: coords.latitude, longitude: coords.longitude, source: "GPS" }; setLocation(n); localStorage.setItem("mrEggzDeliveryLocation", JSON.stringify(n)); setLocating(false); setLocationMessage("Location detected. Checking your delivery zone…"); void checkDelivery(n); }, () => { setLocating(false); setLocationMessage("Please allow location access, or use your saved location."); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }); }
+  function useSavedLocation() { try { const raw = localStorage.getItem("mrEggzDeliveryLocation"); if (!raw) return setLocationMessage("No saved location yet. Use your current location."); const n = JSON.parse(raw) as DeliveryLocation; setLocation(n); void checkDelivery(n); } catch { setLocationMessage("Saved location could not be loaded."); } }
+  function field(k: keyof Customer, v: string) { setCustomer((c) => ({ ...c, [k]: v })); setSaved(false); }
+  function submit(e: FormEvent) { e.preventDefault(); if (!location) return setLocationMessage("Choose your delivery location first."); if (!delivery?.available) return setLocationMessage("This location is outside our current delivery zone."); if (!cart.length) return setLocationMessage("Your cart is empty."); if (!/^[6-9]\d{9}$/.test(customer.phone.replace(/\D/g, ""))) return setLocationMessage("Enter a valid 10-digit Indian mobile number."); if (!/^\d{6}$/.test(customer.pin)) return setLocationMessage("Enter a valid 6-digit PIN code."); const o = createOrderDraft(cart, customer, location, delivery.deliveryFee ?? 0); saveOrder(o); writeCart([]); setOrderId(o.id); setSubmitted(true); }
 
-  async function checkDelivery(next: DeliveryLocation) {
-    setCheckingDelivery(true);
-    setDelivery(null);
-    try {
-      const res = await fetch(`/api/delivery/check?lat=${next.latitude}&lng=${next.longitude}&subtotal=${subtotal}`);
-      const data = await res.json();
-      setDelivery(data);
-    } catch {
-      setDelivery({ available: false, error: "Could not check delivery availability. Please try again." });
-    } finally {
-      setCheckingDelivery(false);
-    }
-  }
+  if (submitted) return <main className="mr-public-shell min-h-screen"><section className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-5 py-12"><div className="w-full overflow-hidden rounded-[2.5rem] border border-black/8 bg-white shadow-[0_35px_100px_rgba(36,28,12,.12)]"><div className="bg-[#151713] px-7 py-10 text-center text-white md:px-12 md:py-14"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#dfe7d1] text-3xl text-[#456032]">✓</div><p className="mt-7 text-[10px] font-black uppercase tracking-[.3em] text-[#d9b65d]">Order confirmed</p><h1 className="mr-display mt-4 text-5xl font-black md:text-7xl">You’re all set.</h1><p className="mx-auto mt-5 max-w-lg leading-7 text-white/50">Your order is safely recorded. Keep the order ID handy—we’ll use it for support and tracking.</p></div><div className="p-7 md:p-10"><div className="grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-[#f7f3e9] p-5"><p className="text-[9px] font-black uppercase tracking-[.18em] text-black/35">Order ID</p><p className="mt-2 text-sm font-black">{orderId}</p></div><div className="rounded-2xl bg-[#f7f3e9] p-5"><p className="text-[9px] font-black uppercase tracking-[.18em] text-black/35">Total</p><p className="mt-2 text-xl font-black">₹{total.toFixed(2)}</p></div><div className="rounded-2xl bg-[#dfe7d1] p-5"><p className="text-[9px] font-black uppercase tracking-[.18em] text-[#456032]/60">Status</p><p className="mt-2 text-sm font-black text-[#456032]">PLACED</p></div></div><div className="mt-7 flex flex-col gap-3 sm:flex-row"><a href="/orders" className="flex-1 rounded-full bg-[#151713] px-7 py-4 text-center font-black text-white">Track my order →</a><a href="/products" className="flex-1 rounded-full border border-black/10 px-7 py-4 text-center font-black">Continue shopping</a></div><a href="/support" className="mt-5 block text-center text-xs font-black text-black/40 hover:text-[#b8872d]">Need help? Customer support</a></div></div></section></main>;
 
-  function detectLocation() {
-    if (!navigator.geolocation) return setLocationMessage("This browser does not support location detection.");
-    setLocating(true); setLocationMessage("");
-    navigator.geolocation.getCurrentPosition(({ coords }) => {
-      const next: DeliveryLocation = { latitude: coords.latitude, longitude: coords.longitude, source: "GPS" };
-      setLocation(next);
-      localStorage.setItem("mrEggzDeliveryLocation", JSON.stringify(next));
-      setLocationMessage("Location detected. Checking delivery availability…");
-      setLocating(false); void checkDelivery(next);
-    }, () => { setLocationMessage("Location permission was not granted. Please enable location and try again."); setLocating(false); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
-  }
-
-  function useSavedLocation() {
-    try {
-      const raw = localStorage.getItem("mrEggzDeliveryLocation");
-      if (raw) { const next = JSON.parse(raw) as DeliveryLocation; setLocation(next); void checkDelivery(next); }
-      else setLocationMessage("No saved location found. Use GPS to detect your location.");
-    } catch { setLocationMessage("Saved location could not be loaded."); }
-  }
-
-  function handleCustomer(field: keyof Customer, value: string) {
-    setCustomer((current) => ({ ...current, [field]: value }));
-    setSaved(false);
-  }
-
-  function saveCustomer() {
-    localStorage.setItem("mrEggzCustomerProfile", JSON.stringify(customer));
-    setSaved(true);
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!location) return setLocationMessage("Please select or detect your delivery location first.");
-    if (!delivery?.available) return setLocationMessage("Delivery is not available at this location yet.");
-    if (!cart.length) return setLocationMessage("Your cart is empty.");
-    if (!/^[6-9]\d{9}$/.test(customer.phone.replace(/\D/g, ""))) return setLocationMessage("Please enter a valid 10-digit Indian mobile number.");
-    if (!/^\d{6}$/.test(customer.pin)) return setLocationMessage("Please enter a valid 6-digit PIN code.");
-
-    const order = createOrderDraft(cart, customer, location, delivery.deliveryFee ?? 0);
-    saveOrder(order);
-    writeCart([]);
-    setOrderId(order.id);
-    setSubmitted(true);
-  }
-
-  if (submitted) return (
-    <main className="min-h-screen bg-[#f7f4ea] text-[#171713]"><section className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16"><div className="w-full rounded-[2.5rem] bg-white p-8 text-center shadow-xl md:p-12"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#dfe8cf] text-3xl">✓</div><p className="mt-7 text-sm font-black uppercase tracking-[.25em] text-[#8c6d21]">Order placed</p><h1 className="mt-3 text-5xl font-black">Thank you.</h1><p className="mx-auto mt-4 max-w-md text-black/55">Your order has been recorded. Keep your order ID for support and tracking.</p><div className="mx-auto mt-7 max-w-sm rounded-2xl bg-[#f7f4ea] p-5 text-left"><div className="flex justify-between"><span className="text-black/50">Order ID</span><strong>{orderId}</strong></div><div className="mt-3 flex justify-between"><span className="text-black/50">Total</span><strong>₹{total.toFixed(2)}</strong></div><div className="mt-3 flex justify-between"><span className="text-black/50">Status</span><strong>PLACED</strong></div></div><div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center"><a href={`/orders`} className="rounded-full bg-[#171713] px-7 py-3 font-bold text-white">View my orders</a><a href="/support" className="rounded-full border border-black/10 px-7 py-3 font-bold">Get support</a></div></div></section></main>
-  );
-
-  return (
-    <main className="min-h-screen bg-[#f7f4ea] text-[#171713]"><header className="border-b border-black/10 bg-[#f7f4ea] px-6 py-4 md:px-12"><div className="mx-auto flex max-w-7xl items-center justify-between"><a href="/" className="text-2xl font-black">MR. <span className="text-[#8c6d21]">EGGZ</span></a><a href="/cart" className="rounded-full border border-black/10 px-5 py-2 text-sm font-bold">Back to cart</a></div></header>
-      <section className="mx-auto max-w-6xl px-6 py-12 md:px-12 md:py-20"><p className="text-sm font-black uppercase tracking-[.28em] text-[#8c6d21]">Checkout</p><h1 className="mt-3 text-5xl font-black md:text-7xl">Almost there.</h1>
-        <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_360px]">
-          <form onSubmit={submit} className="rounded-[2rem] border border-black/10 bg-white p-6 md:p-8">
-            <h2 className="text-2xl font-black">Delivery details</h2><p className="mt-2 text-sm text-black/50">Choose a saved location or detect your current location. We check the delivery zone before allowing the order.</p>
-            <div className="mt-7 rounded-[1.5rem] border border-[#8c6d21]/15 bg-[#f7f4ea] p-5"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-black uppercase tracking-[.2em] text-[#8c6d21]">Delivery location</p><p className="mt-2 text-sm font-semibold">{location ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}` : "Location not set"}</p>{location && <p className="mt-1 text-xs text-black/45">Source: {location.source}</p>}</div><div className="flex flex-wrap gap-2"><button type="button" onClick={useSavedLocation} disabled={checkingDelivery} className="rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-black disabled:opacity-50">Saved location</button><button type="button" onClick={detectLocation} disabled={locating || checkingDelivery} className="rounded-full bg-[#171713] px-5 py-3 text-sm font-black text-white disabled:opacity-50">{locating ? "Detecting…" : checkingDelivery ? "Checking…" : "Use my location"}</button></div></div>{locationMessage && <p className="mt-3 text-xs font-semibold text-[#8c6d21]">{locationMessage}</p>}</div>
-            {delivery && <div className={`mt-4 rounded-2xl p-4 text-sm font-bold ${delivery.available ? "bg-[#dfe8cf] text-[#456032]" : "bg-red-50 text-red-700"}`}>{delivery.available ? `Delivery available · ${delivery.distanceKm} km away · ETA ${delivery.eta}` : delivery.error || `Outside ${delivery.radiusKm} km delivery zone.`}</div>}
-            <div className="mt-7 flex items-center justify-between"><div><h2 className="text-xl font-black">Your details</h2><p className="text-xs text-black/45">Used for delivery and order support.</p></div><button type="button" onClick={saveCustomer} className="text-xs font-black text-[#8c6d21]">{saved ? "Saved ✓" : "Save details"}</button></div>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2"><label className="text-sm font-bold">Full name<input value={customer.name} onChange={(e) => handleCustomer("name", e.target.value)} required className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f7f4ea] px-4 py-3 outline-none focus:border-[#8c6d21]" /></label><label className="text-sm font-bold">Phone<input value={customer.phone} onChange={(e) => handleCustomer("phone", e.target.value)} required inputMode="tel" maxLength={10} className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f7f4ea] px-4 py-3 outline-none focus:border-[#8c6d21]" /></label><label className="text-sm font-bold sm:col-span-2">Address<textarea value={customer.address} onChange={(e) => handleCustomer("address", e.target.value)} required rows={3} className="mt-2 w-full resize-none rounded-2xl border border-black/10 bg-[#f7f4ea] px-4 py-3 outline-none focus:border-[#8c6d21]" /></label><label className="text-sm font-bold">City<input value={customer.city} onChange={(e) => handleCustomer("city", e.target.value)} required className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f7f4ea] px-4 py-3 outline-none focus:border-[#8c6d21]" /></label><label className="text-sm font-bold">PIN code<input value={customer.pin} onChange={(e) => handleCustomer("pin", e.target.value.replace(/\D/g, "").slice(0, 6))} required inputMode="numeric" maxLength={6} className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f7f4ea] px-4 py-3 outline-none focus:border-[#8c6d21]" /></label></div>
-            <button type="submit" disabled={!delivery?.available || checkingDelivery || !cart.length} className="mt-7 w-full rounded-full bg-[#171713] px-6 py-4 font-black text-white transition hover:bg-[#8c6d21] disabled:cursor-not-allowed disabled:opacity-40">Place order · ₹{total.toFixed(2)}</button>
-          </form>
-          <aside className="h-fit rounded-[2rem] bg-[#171713] p-7 text-white lg:sticky lg:top-8"><p className="text-sm font-black uppercase tracking-[.25em] text-[#d9b65d]">Order summary</p><div className="mt-7 space-y-3">{cart.map((item) => { const product = products.find((p) => p.id === item.id); return <div key={item.id} className="flex justify-between gap-4 text-sm"><span className="text-white/60">{product?.name ?? item.name} × {item.quantity}</span><span className="font-bold">₹{((product?.price ?? 0) * item.quantity).toFixed(2)}</span></div>; })}</div><div className="mt-6 flex justify-between border-t border-white/10 pt-5"><span className="text-white/60">Subtotal</span><span className="font-black">₹{subtotal.toFixed(2)}</span></div><div className="mt-4 flex justify-between"><span className="text-white/60">Delivery</span><span className="font-black">{delivery?.available ? (delivery.deliveryFee ? `₹${delivery.deliveryFee.toFixed(2)}` : "FREE") : "—"}</span></div><div className="mt-5 flex justify-between border-t border-white/10 pt-5 text-lg"><span className="font-bold">Total</span><span className="font-black">₹{total.toFixed(2)}</span></div></aside>
-        </div>
-      </section>
-    </main>
-  );
+  return <main className="mr-public-shell min-h-screen"><header className="sticky top-0 z-30 border-b border-black/8 bg-[#fffdf8]/80 px-5 py-4 backdrop-blur-xl md:px-10"><div className="mx-auto flex max-w-7xl items-center justify-between"><a href="/" className="text-2xl font-black tracking-[-.04em]">MR. <span className="text-[#b8872d]">EGGZ</span></a><div className="flex items-center gap-2"><span className="hidden rounded-full bg-[#dfe7d1] px-4 py-2 text-[10px] font-black uppercase tracking-[.15em] text-[#456032] sm:inline-flex">Secure checkout</span><a href="/cart" className="rounded-full border border-black/10 px-5 py-2.5 text-sm font-black">Back to cart</a></div></div></header><section className="mx-auto max-w-6xl px-5 py-10 md:px-10 md:py-16"><div><p className="text-[10px] font-black uppercase tracking-[.3em] text-[#b8872d]">Final step</p><h1 className="mr-display mt-4 text-6xl font-black md:text-8xl">Let’s deliver.</h1><p className="mt-5 max-w-2xl text-base leading-7 text-black/50">Tell us where you are. We’ll verify the delivery zone, calculate the fee and prepare your order.</p></div><div className="mt-10 grid gap-8 lg:grid-cols-[1fr_370px]"><form onSubmit={submit} className="space-y-5"><div className="rounded-[2rem] border border-black/8 bg-white p-6 shadow-[0_16px_45px_rgba(36,28,12,.05)] md:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-[9px] font-black uppercase tracking-[.25em] text-[#b8872d]">01 · Delivery</p><h2 className="mt-2 text-2xl font-black">Where should we bring it?</h2></div><span className="rounded-full bg-[#f7f3e9] px-3 py-1 text-[9px] font-black uppercase tracking-[.15em] text-black/40">Required</span></div><div className="mt-6 rounded-[1.5rem] bg-[#f7f3e9] p-5"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="text-xs font-black uppercase tracking-[.2em] text-[#b8872d]">Your location</p><p className="mt-2 text-sm font-bold">{location ? `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` : "Not selected"}</p>{location && <p className="mt-1 text-[10px] text-black/40">Detected via {location.source}</p>}</div><div className="flex flex-wrap gap-2"><button type="button" onClick={useSavedLocation} disabled={checkingDelivery} className="rounded-full border border-black/10 bg-white px-4 py-3 text-xs font-black">Saved</button><button type="button" onClick={detectLocation} disabled={locating || checkingDelivery} className="rounded-full bg-[#151713] px-5 py-3 text-xs font-black text-white">{locating ? "Detecting…" : checkingDelivery ? "Checking…" : "Use my location"}</button></div></div>{locationMessage && <p className="mt-4 rounded-xl bg-white px-4 py-3 text-xs font-bold text-[#8c6d21]">{locationMessage}</p>}</div>{delivery && <div className={`mt-4 rounded-2xl p-4 ${delivery.available ? "bg-[#dfe7d1] text-[#456032]" : "bg-[#f8e9df] text-[#a34f35]"}`}><p className="text-sm font-black">{delivery.available ? "We deliver here." : "Delivery unavailable here."}</p><p className="mt-1 text-xs font-semibold opacity-70">{delivery.available ? `${delivery.distanceKm} km away · ETA ${delivery.eta}${delivery.deliveryFee ? ` · ₹${delivery.deliveryFee} delivery` : " · Free delivery"}` : delivery.error || `Current service radius: ${delivery.radiusKm} km.`}</p></div>}</div><div className="rounded-[2rem] border border-black/8 bg-white p-6 shadow-[0_16px_45px_rgba(36,28,12,.05)] md:p-8"><div className="flex items-start justify-between"><div><p className="text-[9px] font-black uppercase tracking-[.25em] text-[#b8872d]">02 · Contact</p><h2 className="mt-2 text-2xl font-black">Who’s receiving it?</h2></div><button type="button" onClick={() => { localStorage.setItem("mrEggzCustomerProfile", JSON.stringify(customer)); setSaved(true); }} className="text-xs font-black text-[#b8872d]">{saved ? "Saved ✓" : "Save details"}</button></div><div className="mt-6 grid gap-5 sm:grid-cols-2"><label className="text-xs font-black">Full name<input value={customer.name} onChange={(e) => field("name", e.target.value)} required className="mt-2 w-full rounded-2xl border border-black/8 bg-[#f7f3e9] px-4 py-3.5 text-sm outline-none focus:border-[#b8872d]" /></label><label className="text-xs font-black">Mobile number<input value={customer.phone} onChange={(e) => field("phone", e.target.value.replace(/\D/g, "").slice(0, 10))} required inputMode="tel" className="mt-2 w-full rounded-2xl border border-black/8 bg-[#f7f3e9] px-4 py-3.5 text-sm outline-none focus:border-[#b8872d]" /></label><label className="text-xs font-black sm:col-span-2">Delivery address<textarea value={customer.address} onChange={(e) => field("address", e.target.value)} required rows={3} className="mt-2 w-full resize-none rounded-2xl border border-black/8 bg-[#f7f3e9] px-4 py-3.5 text-sm outline-none focus:border-[#b8872d]" /></label><label className="text-xs font-black">City<input value={customer.city} onChange={(e) => field("city", e.target.value)} required className="mt-2 w-full rounded-2xl border border-black/8 bg-[#f7f3e9] px-4 py-3.5 text-sm outline-none focus:border-[#b8872d]" /></label><label className="text-xs font-black">PIN code<input value={customer.pin} onChange={(e) => field("pin", e.target.value.replace(/\D/g, "").slice(0, 6))} required inputMode="numeric" className="mt-2 w-full rounded-2xl border border-black/8 bg-[#f7f3e9] px-4 py-3.5 text-sm outline-none focus:border-[#b8872d]" /></label></div></div><button type="submit" disabled={!delivery?.available || checkingDelivery || !cart.length} className="w-full rounded-full bg-[#151713] px-7 py-4.5 text-sm font-black text-white shadow-[0_15px_35px_rgba(21,23,19,.15)] transition hover:-translate-y-0.5 hover:bg-[#b8872d] disabled:cursor-not-allowed disabled:opacity-35">Place order · ₹{total.toFixed(2)}</button></form><aside className="h-fit overflow-hidden rounded-[2rem] bg-[#151713] text-white shadow-[0_25px_70px_rgba(21,23,19,.18)] lg:sticky lg:top-24"><div className="p-7"><p className="text-[9px] font-black uppercase tracking-[.28em] text-[#d9b65d]">Your order</p><div className="mt-6 space-y-4">{cart.map((item) => { const p = products.find((x) => x.id === item.id); return <div key={item.id} className="flex justify-between gap-4"><span className="text-sm text-white/55">{p?.name ?? item.name} × {item.quantity}</span><span className="text-sm font-black">₹{((p?.price ?? 0) * item.quantity).toFixed(2)}</span></div>; })}</div><div className="mt-6 space-y-3 border-t border-white/10 pt-5"><div className="flex justify-between text-sm"><span className="text-white/50">Subtotal</span><span className="font-black">₹{subtotal.toFixed(2)}</span></div><div className="flex justify-between text-sm"><span className="text-white/50">Delivery</span><span className="font-black">{delivery?.available ? (delivery.deliveryFee ? `₹${delivery.deliveryFee}` : "FREE") : "—"}</span></div></div><div className="mt-6 flex items-end justify-between gap-4 border-t border-white/10 pt-6"><span className="font-bold">Total</span><span className="text-3xl font-black">₹{total.toFixed(2)}</span></div></div><div className="border-t border-white/10 bg-white/[.03] px-7 py-5 text-center text-[9px] font-black uppercase tracking-[.18em] text-white/30">Payment gateway will be added when enabled</div></aside></div></section></main>;
 }
